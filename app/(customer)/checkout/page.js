@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { apiFetch } from "@/lib/api";
 import { getUser, getUserToken } from "@/lib/auth";
-import { clearCart, getCart } from "@/lib/cart";
+import { clearCart, getCart, setCart, updateQuantity } from "@/lib/cart";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [games, setGames] = useState([]);
-  const [cart, setCartState] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [cart, setCartState] = useState([]);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [razorpayReady, setRazorpayReady] = useState(false);
@@ -27,28 +25,21 @@ export default function CheckoutPage() {
     setUser(currentUser);
 
     const currentCart = getCart();
-    if (Object.keys(currentCart).length === 0) {
+    if (currentCart.length === 0) {
       router.replace("/");
       return;
     }
     setCartState(currentCart);
-
-    apiFetch("/games")
-      .then((data) => setGames(data.games))
-      .catch((err) => setError(err.message || "Could not load activities"))
-      .finally(() => setLoading(false));
   }, [router]);
 
-  const lineItems = games
-    .filter((g) => cart[g.key])
-    .map((g) => ({
-      gameKey: g.key,
-      name: g.name,
-      quantity: cart[g.key],
-      subtotal: cart[g.key] * Number(g.price_per_person),
-    }));
+  function changeQty(line, delta) {
+    const next = updateQuantity(cart, line.gameKey, line.variantId, line.quantity + delta);
+    setCartState(next);
+    setCart(next);
+    if (next.length === 0) router.replace("/");
+  }
 
-  const total = lineItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = useMemo(() => cart.reduce((sum, l) => sum + l.quantity * l.pricePerPerson, 0), [cart]);
 
   async function pay() {
     if (!razorpayReady || !window.Razorpay) {
@@ -62,7 +53,9 @@ export default function CheckoutPage() {
       const order = await apiFetch("/bookings", {
         method: "POST",
         token,
-        body: { items: lineItems.map(({ gameKey, quantity }) => ({ gameKey, quantity })) },
+        body: {
+          items: cart.map(({ gameKey, variantId, quantity }) => ({ gameKey, variantId, quantity })),
+        },
       });
 
       const rzp = new window.Razorpay({
@@ -79,7 +72,7 @@ export default function CheckoutPage() {
         },
         handler: async (response) => {
           try {
-            const result = await apiFetch(`/bookings/${order.bookingId}/verify-payment`, {
+            await apiFetch(`/bookings/${order.bookingId}/verify-payment`, {
               method: "POST",
               token,
               body: {
@@ -88,10 +81,6 @@ export default function CheckoutPage() {
                 razorpaySignature: response.razorpay_signature,
               },
             });
-            sessionStorage.setItem(
-              `booking_${order.bookingId}`,
-              JSON.stringify(result.ticketsByGame)
-            );
             clearCart();
             router.push(`/tickets/${order.bookingId}`);
           } catch (err) {
@@ -102,7 +91,7 @@ export default function CheckoutPage() {
         modal: {
           ondismiss: () => setPaying(false),
         },
-        theme: { color: "#2563eb" },
+        theme: { color: "#e2481f" },
       });
       rzp.open();
     } catch (err) {
@@ -111,7 +100,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!user) return null;
+  if (!user || cart.length === 0) return null;
 
   return (
     <div className="page">
@@ -124,36 +113,47 @@ export default function CheckoutPage() {
         <h1>Checkout</h1>
       </div>
 
-      {loading && <p className="muted">Loading...</p>}
+      <div className="flex flex-col gap-3">
+        {cart.map((line) => (
+          <div key={`${line.gameKey}:${line.variantId ?? "flat"}`} className="card flex items-center gap-3">
+            {line.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={line.imageUrl}
+                alt={line.gameName}
+                className="h-14 w-14 shrink-0 rounded-xl object-cover"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">{line.gameName}</p>
+              {line.variantLabel && <p className="muted">{line.variantLabel}</p>}
+              <p className="muted">₹{line.pricePerPerson.toFixed(0)} / person</p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="qty-control">
+                <button className="qty-btn" onClick={() => changeQty(line, -1)}>
+                  −
+                </button>
+                <span className="qty-value">{line.quantity}</span>
+                <button className="qty-btn" onClick={() => changeQty(line, 1)}>
+                  +
+                </button>
+              </div>
+              <p className="font-semibold text-primary">₹{(line.quantity * line.pricePerPerson).toFixed(0)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      {!loading && (
-        <div className="card">
-          <table>
-            <tbody>
-              {lineItems.map((item) => (
-                <tr key={item.gameKey}>
-                  <td>{item.name}</td>
-                  <td>× {item.quantity}</td>
-                  <td style={{ textAlign: "right" }}>₹{item.subtotal.toFixed(0)}</td>
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={2}>
-                  <strong>Total</strong>
-                </td>
-                <td style={{ textAlign: "right" }}>
-                  <strong>₹{total.toFixed(0)}</strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="card flex items-center justify-between">
+        <p className="font-bold">Total</p>
+        <p className="text-lg font-bold">₹{total.toFixed(0)}</p>
+      </div>
 
       {error && <p className="error-text">{error}</p>}
 
       <div className="sticky-footer">
-        <button className="btn" onClick={pay} disabled={paying || loading}>
+        <button className="btn" onClick={pay} disabled={paying}>
           {paying ? "Processing..." : `Pay ₹${total.toFixed(0)}`}
         </button>
       </div>
