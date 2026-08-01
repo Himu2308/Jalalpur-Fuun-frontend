@@ -514,24 +514,33 @@ export default function AdminPage() {
         {!scans && <p className="muted">Loading...</p>}
         {scans && scans.length === 0 && <p className="muted">No scans yet.</p>}
         {scans && scans.length > 0 && (
-          <table>
-            <thead>
-              <tr>
-                <th>Activity</th>
-                <th>Scanned by</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scans.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.game_name}</td>
-                  <td>{s.staff_uid ? `${s.staff_name || s.staff_uid}` : "Admin"}</td>
-                  <td>{new Date(s.scanned_at).toLocaleString()}</td>
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Activity</th>
+                  <th>Scanned by</th>
+                  <th>Customer</th>
+                  <th>Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {scans.map((s) => (
+                  <tr key={s.id}>
+                    <td className="whitespace-nowrap">{s.game_name}</td>
+                    <td className="whitespace-nowrap">{s.scanned_by_uid || "Admin"}</td>
+                    <td>
+                      <div className="whitespace-nowrap">{s.customer_name}</div>
+                      <div className="muted whitespace-nowrap">
+                        {[s.customer_phone, s.customer_email].filter(Boolean).join(" · ")}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap">{new Date(s.scanned_at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

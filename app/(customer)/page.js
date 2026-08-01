@@ -97,9 +97,6 @@ export default function HomePage() {
       <div className="flex flex-col gap-4">
         {games.map((game) => {
           const hasVariants = game.variants.length > 0;
-          const startingPrice = hasVariants
-            ? Math.min(...game.variants.map((v) => Number(v.pricePerPerson)))
-            : Number(game.price_per_person);
           const qty = flatQuantity(game.key);
 
           return (
@@ -116,7 +113,7 @@ export default function HomePage() {
 
               <div className="flex items-center justify-between p-3.5">
                 <p className="muted">
-                  {hasVariants ? "From " : ""}₹{startingPrice.toFixed(0)} / person
+                  {hasVariants ? "Pick your mode & laps" : `₹${Number(game.price_per_person).toFixed(0)} / person`}
                 </p>
 
                 {hasVariants ? (
