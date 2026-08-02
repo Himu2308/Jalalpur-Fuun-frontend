@@ -28,6 +28,9 @@ export default function AdminPage() {
   const [deletingGameId, setDeletingGameId] = useState(null);
 
   const [expandedGameId, setExpandedGameId] = useState(null);
+  const [activityForm, setActivityForm] = useState({ name: "", pricePerPerson: "", imageUrl: "" });
+  const [activityError, setActivityError] = useState("");
+  const [savingActivity, setSavingActivity] = useState(false);
   const [variantForm, setVariantForm] = useState({ mode: "single", laps: "", pricePerPerson: "" });
   const [variantError, setVariantError] = useState("");
   const [savingVariant, setSavingVariant] = useState(false);
@@ -177,7 +180,7 @@ export default function AdminPage() {
 
   async function deleteGame(game) {
     const confirmed = window.confirm(
-      `Remove "${game.name}"?\n\nIt will disappear from the customer homepage. Existing bookings and tickets will remain available.`
+      `Permanently delete "${game.name}" from the database?\n\nDeletion is allowed only if it has no booking history.`
     );
     if (!confirmed) return;
 
@@ -197,10 +200,47 @@ export default function AdminPage() {
     }
   }
 
-  function toggleExpand(gameId) {
-    setExpandedGameId(expandedGameId === gameId ? null : gameId);
+  function toggleExpand(game) {
+    const opening = expandedGameId !== game.id;
+    setExpandedGameId(opening ? game.id : null);
+    if (opening) {
+      setActivityForm({
+        name: game.name,
+        pricePerPerson: String(game.price_per_person),
+        imageUrl: game.image_url || "",
+      });
+    }
+    setActivityError("");
     setVariantForm({ mode: "single", laps: "", pricePerPerson: "" });
     setVariantError("");
+  }
+
+  async function saveActivity(e, game) {
+    e.preventDefault();
+    setActivityError("");
+    const price = Number(activityForm.pricePerPerson);
+    if (!activityForm.name.trim() || !Number.isFinite(price) || price <= 0) {
+      setActivityError("Name and a positive base price are required");
+      return;
+    }
+
+    setSavingActivity(true);
+    try {
+      await apiFetch(`/games/${game.id}`, {
+        method: "PATCH",
+        token: getAdminToken(),
+        body: {
+          name: activityForm.name.trim(),
+          pricePerPerson: price,
+          imageUrl: activityForm.imageUrl.trim() || null,
+        },
+      });
+      await loadGames();
+    } catch (err) {
+      setActivityError(err.message || "Could not update activity");
+    } finally {
+      setSavingActivity(false);
+    }
   }
 
   async function submitVariant(e, game) {
@@ -410,10 +450,10 @@ export default function AdminPage() {
                     <button
                       className="btn btn-secondary"
                       style={{ width: "auto", minHeight: 32, padding: "4px 10px", fontSize: "0.72rem" }}
-                      onClick={() => toggleExpand(g.id)}
+                      onClick={() => toggleExpand(g)}
                       disabled={deletingGameId === g.id}
                     >
-                      {expandedGameId === g.id ? "Close" : "Manage pricing"}
+                      {expandedGameId === g.id ? "Close" : "Manage activity"}
                     </button>
                     <button
                       className="flex min-h-8 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[0.7rem] font-bold text-red-700 active:bg-red-100 disabled:opacity-50"
@@ -430,6 +470,49 @@ export default function AdminPage() {
 
                 {expandedGameId === g.id && (
                   <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+                    <form onSubmit={(e) => saveActivity(e, g)} className="flex flex-col gap-2.5 rounded-2xl bg-paper p-3">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-sm">Activity details</strong>
+                        <span className="text-[0.65rem] text-ink-muted">Key: {g.key}</span>
+                      </div>
+                      <div className="field">
+                        <label className="label" htmlFor={`activity-name-${g.id}`}>Activity name</label>
+                        <input
+                          id={`activity-name-${g.id}`}
+                          className="input"
+                          value={activityForm.name}
+                          onChange={(e) => setActivityForm({ ...activityForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="field">
+                        <label className="label" htmlFor={`activity-price-${g.id}`}>Base price per person (INR)</label>
+                        <input
+                          id={`activity-price-${g.id}`}
+                          className="input"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={activityForm.pricePerPerson}
+                          onChange={(e) => setActivityForm({ ...activityForm, pricePerPerson: e.target.value })}
+                        />
+                      </div>
+                      <div className="field">
+                        <label className="label" htmlFor={`activity-image-${g.id}`}>Image URL</label>
+                        <input
+                          id={`activity-image-${g.id}`}
+                          className="input"
+                          type="url"
+                          placeholder="https://..."
+                          value={activityForm.imageUrl}
+                          onChange={(e) => setActivityForm({ ...activityForm, imageUrl: e.target.value })}
+                        />
+                      </div>
+                      {activityError && <p className="error-text">{activityError}</p>}
+                      <button className="btn" type="submit" disabled={savingActivity}>
+                        {savingActivity ? "Saving changes…" : "Save activity details"}
+                      </button>
+                    </form>
+
                     {g.variants.length > 0 && (
                       <table>
                         <thead>

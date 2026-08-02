@@ -14,6 +14,8 @@ export default function StaffLoginPage() {
   const [loginError, setLoginError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [result, setResult] = useState(null);
+  const [manualTicketCode, setManualTicketCode] = useState("");
+  const [validatingCode, setValidatingCode] = useState(false);
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -43,6 +45,19 @@ export default function StaffLoginPage() {
       }, RESULT_DISPLAY_MS);
     }
   }, []);
+
+  async function submitManualTicketCode(e) {
+    e.preventDefault();
+    const code = manualTicketCode.trim();
+    if (!code) {
+      setResult({ ok: false, message: "Enter the code shown below the customer QR ticket" });
+      return;
+    }
+    setValidatingCode(true);
+    await onScan(code);
+    setValidatingCode(false);
+    setManualTicketCode("");
+  }
 
   async function login(e) {
     e.preventDefault();
@@ -169,6 +184,36 @@ export default function StaffLoginPage() {
         </div>
         <div className="p-4">
           <QrScanner onScan={onScan} />
+
+          <div className="my-5 flex items-center gap-3 text-[0.62rem] font-bold tracking-[0.12em] text-ink-muted/60">
+            <span className="h-px flex-1 bg-line" />
+            <span>CAMERA NOT WORKING?</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+
+          <form onSubmit={submitManualTicketCode} className="rounded-2xl border border-line bg-paper p-3.5">
+            <label className="mb-1 block text-sm font-bold text-ink" htmlFor="staff-manual-ticket-code">
+              Validate with ticket code
+            </label>
+            <p className="muted mb-3 text-xs">
+              Enter the code below the customer&apos;s QR. It must belong to your assigned activity.
+            </p>
+            <div className="flex gap-2">
+              <input
+                id="staff-manual-ticket-code"
+                className="input min-w-0 flex-1 text-center font-mono tracking-[0.12em] uppercase"
+                value={manualTicketCode}
+                onChange={(e) => setManualTicketCode(e.target.value.replace(/\s/g, "").slice(0, 25))}
+                placeholder="#WX8AOLTW"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <button className="btn w-auto shrink-0 px-4" type="submit" disabled={validatingCode || !manualTicketCode.trim()}>
+                {validatingCode ? "Checking…" : "Validate"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
