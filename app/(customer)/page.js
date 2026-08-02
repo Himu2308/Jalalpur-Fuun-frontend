@@ -7,6 +7,26 @@ import { clearUserSession, getUser, getUserToken } from "@/lib/auth";
 import { addLine, getCart, setCart, updateQuantity } from "@/lib/cart";
 import GameVariantSheet from "@/components/GameVariantSheet";
 
+const CARD_ACCENTS = ["#f97316", "#2563eb", "#059669", "#9333ea"];
+
+function TicketLogo() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 32 32">
+      <path d="M7 6h18a2 2 0 0 1 2 2v4a4 4 0 0 0 0 8v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4a4 4 0 0 0 0-8V8a2 2 0 0 1 2-2Z" fill="currentColor" />
+      <path d="M16 9v14" stroke="#7c2d12" strokeWidth="1.7" strokeDasharray="2 3" />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z" fill="currentColor" />
+      <path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -33,23 +53,22 @@ export default function HomePage() {
   }, [router]);
 
   function flatQuantity(gameKey) {
-    return cart.find((l) => l.gameKey === gameKey && l.variantId == null)?.quantity || 0;
+    return cart.find((line) => line.gameKey === gameKey && line.variantId == null)?.quantity || 0;
   }
 
   function updateFlatQty(game, delta) {
     const next = updateQuantity(cart, game.key, null, flatQuantity(game.key) + delta);
-    const withLine =
-      delta > 0 && !next.some((l) => l.gameKey === game.key && l.variantId == null)
-        ? addLine(next, {
-            gameKey: game.key,
-            gameName: game.name,
-            imageUrl: game.image_url,
-            variantId: null,
-            variantLabel: null,
-            pricePerPerson: Number(game.price_per_person),
-            quantity: delta,
-          })
-        : next;
+    const withLine = delta > 0 && !next.some((line) => line.gameKey === game.key && line.variantId == null)
+      ? addLine(next, {
+          gameKey: game.key,
+          gameName: game.name,
+          imageUrl: game.image_url,
+          variantId: null,
+          variantLabel: null,
+          pricePerPerson: Number(game.price_per_person),
+          quantity: delta,
+        })
+      : next;
     setCartState(withLine);
     setCart(withLine);
   }
@@ -63,101 +82,121 @@ export default function HomePage() {
   async function logout() {
     try {
       await apiFetch("/auth/logout", { method: "POST", token: getUserToken() });
-    } catch (err) {
-      // ignore — clear the local session either way
+    } catch {
+      // The local session should still be cleared if the server is unavailable.
     }
     clearUserSession();
     router.replace("/login");
   }
 
-  const totalItems = useMemo(() => cart.reduce((sum, l) => sum + l.quantity, 0), [cart]);
-  const totalAmount = useMemo(
-    () => cart.reduce((sum, l) => sum + l.quantity * l.pricePerPerson, 0),
-    [cart]
-  );
+  const totalItems = useMemo(() => cart.reduce((sum, line) => sum + line.quantity, 0), [cart]);
+  const totalAmount = useMemo(() => cart.reduce((sum, line) => sum + line.quantity * line.pricePerPerson, 0), [cart]);
 
   if (!user) return null;
 
+  const firstName = user.name?.split(" ")[0] || "Explorer";
+
   return (
-    <div className="page">
-      <div className="top-bar">
-        <h1>Hi, {user.name?.split(" ")[0] || "there"} 👋</h1>
-        <button
-          className="btn btn-secondary"
-          style={{ width: "auto", minHeight: 36, padding: "6px 12px" }}
-          onClick={logout}
-        >
-          Logout
-        </button>
-      </div>
+    <main className={`home-page ${totalItems ? "home-has-cart" : ""}`}>
+      <section className="home-hero">
+        <div className="home-orb home-orb-one" />
+        <div className="home-orb home-orb-two" />
 
-      {loading && <p className="muted">Loading activities...</p>}
-      {error && <p className="error-text">{error}</p>}
+        <header className="home-header">
+          <div className="home-brand">
+            <span className="home-brand-mark"><TicketLogo /></span>
+            <span><strong>Jalalpur Fun</strong><small>ADVENTURE PARK</small></span>
+          </div>
+          <button className="home-avatar" onClick={logout} aria-label="Log out" title="Log out">
+            {/* Google profile URLs are remote and not part of the app's configured image hosts. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {user.picture ? <img src={user.picture} alt="" referrerPolicy="no-referrer" /> : <span>{firstName.charAt(0).toUpperCase()}</span>}
+            <i />
+          </button>
+        </header>
 
-      <div className="flex flex-col gap-4">
-        {games.map((game) => {
-          const hasVariants = game.variants.length > 0;
-          const qty = flatQuantity(game.key);
+        <div className="home-welcome">
+          <span className="home-eyebrow"><SparkIcon /> HELLO, {firstName.toUpperCase()}</span>
+          <h1>Ready for your<br /><em>next adventure?</em></h1>
+          <p>Pick your thrill, grab your tickets and make today unforgettable.</p>
+        </div>
 
-          return (
-            <div key={game.key} className="overflow-hidden rounded-2xl border border-line bg-surface">
-              <div
-                className="relative h-32 bg-navy bg-cover bg-center"
-                style={game.image_url ? { backgroundImage: `url(${game.image_url})` } : undefined}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
-                <h3 className="absolute bottom-2.5 left-3.5 text-lg font-extrabold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.45)]">
-                  {game.name}
-                </h3>
-              </div>
+        <div className="home-trust-row">
+          <span><b>⚡</b><i>Instant<br /><strong>Booking</strong></i></span>
+          <span><b>✓</b><i>Safe &amp;<br /><strong>Secure</strong></i></span>
+          <span><b>★</b><i>Top-rated<br /><strong>Experiences</strong></i></span>
+        </div>
+      </section>
 
-              <div className="flex items-center justify-between p-3.5">
-                <p className="muted">
-                  {hasVariants ? "Pick your mode & laps" : `₹${Number(game.price_per_person).toFixed(0)} / person`}
-                </p>
+      <section className="home-content">
+        <div className="home-section-title">
+          <div><span>CHOOSE YOUR THRILL</span><h2>Featured activities</h2></div>
+          {!loading && <small>{games.length} available</small>}
+        </div>
 
-                {hasVariants ? (
-                  <button
-                    className="btn"
-                    style={{ width: "auto", minHeight: 38, padding: "8px 18px" }}
-                    onClick={() => setSheetGame(game)}
-                  >
-                    Select
-                  </button>
-                ) : (
-                  <div className="qty-control">
-                    <button className="qty-btn" onClick={() => updateFlatQty(game, -1)} disabled={!qty}>
-                      −
-                    </button>
-                    <span className="qty-value">{qty}</span>
-                    <button className="qty-btn" onClick={() => updateFlatQty(game, 1)}>
-                      +
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        {error && <div className="home-error" role="alert"><strong>We hit a speed bump</strong><span>{error}</span></div>}
 
-      {sheetGame && (
-        <GameVariantSheet game={sheetGame} onClose={() => setSheetGame(null)} onAdd={handleAddVariantLine} />
-      )}
+        <div className="home-game-list">
+          {loading && [0, 1, 2].map((item) => <div className="home-game-card home-skeleton" key={item}><div /><span /><i /></div>)}
+
+          {games.map((game, index) => {
+            const hasVariants = game.variants.length > 0;
+            const isGoKarting = /go\s*-?\s*kart/i.test(`${game.key} ${game.name}`);
+            const qty = flatQuantity(game.key);
+            const price = hasVariants
+              ? Math.min(...game.variants.map((variant) => Number(variant.pricePerPerson)))
+              : Number(game.price_per_person);
+
+            return (
+              <article key={game.key} className="home-game-card" style={{ "--card-accent": CARD_ACCENTS[index % CARD_ACCENTS.length] }}>
+                <div className="home-game-image" style={game.image_url ? { backgroundImage: `url(${game.image_url})` } : undefined}>
+                  <div className="home-game-fallback"><SparkIcon /></div>
+                  <span className="home-game-badge">{index === 0 ? "MOST LOVED" : "ADVENTURE"}</span>
+                  <div className="home-game-shade" />
+                  <div className="home-game-name"><h3>{game.name}</h3><span>Thrill starts here →</span></div>
+                </div>
+
+                <div className="home-game-info">
+                  {isGoKarting ? (
+                    <div className="home-price home-price-hidden"><small>CHOOSE YOUR RIDE</small><strong>Multiple options</strong></div>
+                  ) : (
+                    <div className="home-price"><small>{hasVariants ? "STARTING FROM" : "PER PERSON"}</small><strong>₹{price.toFixed(0)}</strong>{hasVariants && <span> / person</span>}</div>
+                  )}
+
+                  {hasVariants ? (
+                    <button className="home-select-btn" onClick={() => setSheetGame(game)}>View options <span>→</span></button>
+                  ) : qty ? (
+                    <div className="home-qty">
+                      <button onClick={() => updateFlatQty(game, -1)} aria-label={`Remove one ${game.name}`}>−</button>
+                      <span><strong>{qty}</strong><small>added</small></span>
+                      <button onClick={() => updateFlatQty(game, 1)} aria-label={`Add one ${game.name}`}>+</button>
+                    </div>
+                  ) : (
+                    <button className="home-select-btn" onClick={() => updateFlatQty(game, 1)}>Add ticket <span>+</span></button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {sheetGame && <GameVariantSheet game={sheetGame} onClose={() => setSheetGame(null)} onAdd={handleAddVariantLine} />}
 
       {totalItems > 0 && (
-        <div className="fixed inset-x-0 bottom-[64px] z-30 flex justify-center px-4">
-          <button
-            className="flex w-full max-w-[452px] items-center justify-between rounded-2xl bg-primary px-5 py-3.5 font-semibold text-white shadow-[0_8px_24px_rgba(226,72,31,0.35)]"
-            onClick={() => router.push("/checkout")}
-          >
-            <span>
-              {totalItems} ticket{totalItems > 1 ? "s" : ""} added
+        <div className="home-cart-dock">
+          <button onClick={() => router.push("/checkout")}>
+            <span className="home-cart-count">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M5 7h14l-1.4 7.2a2 2 0 0 1-2 1.6H8.4a2 2 0 0 1-2-1.6L5 7Zm0 0-.7-2H2.8M9 20h.01M17 20h.01" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <i>{totalItems}</i>
             </span>
-            <span>₹{totalAmount.toFixed(0)} · Proceed →</span>
+            <span className="home-cart-label"><small>YOUR CART</small><strong>{totalItems} ticket{totalItems > 1 ? "s" : ""}</strong></span>
+            <span className="home-cart-total"><small>₹{totalAmount.toFixed(0)}</small><strong>Checkout <i>→</i></strong></span>
           </button>
         </div>
       )}
-    </div>
+    </main>
   );
 }
