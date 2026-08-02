@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { clearWorkerSession, getWorker, getWorkerToken, setWorkerSession } from "@/lib/auth";
 import QrScanner from "@/components/QrScanner";
@@ -121,6 +122,23 @@ export default function StaffLoginPage() {
               {loggingIn ? "Signing in..." : "Sign In"}
             </button>
             <p className="muted text-center text-xs">Don&apos;t have a UID? Ask your admin to create one.</p>
+
+            <div className="flex items-center gap-3 py-1 text-[0.65rem] font-bold tracking-[0.12em] text-ink-muted/60">
+              <span className="h-px flex-1 bg-line" />
+              <span>OR</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+
+            <Link
+              href="/admin"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-navy/15 bg-navy/[0.04] px-4 text-sm font-bold text-navy no-underline transition-colors active:bg-navy/10"
+            >
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M9.5 12h5M12 9.5v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Admin Login
+            </Link>
           </form>
         </div>
       </div>
