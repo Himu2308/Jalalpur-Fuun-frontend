@@ -204,7 +204,8 @@ select {
 .login-glow { position: absolute; border-radius: 999px; filter: blur(2px); opacity: .3; }
 .login-glow-one { width: 280px; height: 280px; right: -150px; top: -80px; background: #fb923c; }
 .login-glow-two { width: 220px; height: 220px; left: -150px; top: 38%; background: #fbbf24; opacity: .12; }
-.login-brand { display: flex; align-items: center; gap: 11px; }
+.login-brand { display: flex; min-height: 62px; align-items: center; }
+.login-brand-logo { width: clamp(160px, 50vw, 205px); height: auto; object-fit: contain; filter: drop-shadow(0 4px 9px #2b0d0655); }
 .login-logo { display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid #fed7aa55; border-radius: 17px; background: #fff7ed14; color: #fdba74; box-shadow: inset 0 1px #ffffff24; }
 .login-brand strong { display: block; font-size: 1.1rem; letter-spacing: -.02em; }
 .login-brand small { display: block; margin-top: 2px; color: #fdba74; font-size: .57rem; font-weight: 800; letter-spacing: .22em; }

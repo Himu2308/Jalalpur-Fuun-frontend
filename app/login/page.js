@@ -2,22 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Script from "next/script";
 import { apiFetch } from "@/lib/api";
 import { getUser, getUserToken, setUserSession } from "@/lib/auth";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
-function TicketMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 56 56" className="h-9 w-9">
-      <path d="M12 11h32a4 4 0 0 1 4 4v7a6 6 0 0 0 0 12v7a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4v-7a6 6 0 0 0 0-12v-7a4 4 0 0 1 4-4Z" fill="currentColor" />
-      <path d="M28 15v26M19 28h18" stroke="#7c2d12" strokeWidth="3" strokeLinecap="round" strokeDasharray="2 6" />
-      <circle cx="20" cy="28" r="5" fill="#7c2d12" />
-      <path d="m18 28 1.5 1.5L22.5 26" fill="none" stroke="#fff7ed" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function AdventureScene() {
   return (
@@ -129,11 +119,14 @@ export default function LoginPage() {
 
       <section className="relative z-10 flex min-h-dvh w-full max-w-[460px] flex-col px-5 pt-[max(24px,env(safe-area-inset-top))] pb-[max(24px,env(safe-area-inset-bottom))]">
         <header className="login-brand login-reveal">
-          <span className="login-logo"><TicketMark /></span>
-          <span>
-            <strong>Jalalpur Fun</strong>
-            <small>ADVENTURE PARK</small>
-          </span>
+          <Image
+            className="login-brand-logo"
+            src="/jalalpur-logo.png"
+            alt="Jalalpur Fuun"
+            width={700}
+            height={354}
+            priority
+          />
         </header>
 
         <div className="login-hero login-reveal login-delay-one">
