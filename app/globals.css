@@ -269,7 +269,8 @@ select {
 .home-orb-one { width: 230px; height: 230px; right: -110px; top: -80px; }
 .home-orb-two { width: 130px; height: 130px; left: -75px; bottom: -55px; }
 .home-header { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
-.home-brand { display: flex; align-items: center; gap: 9px; }
+.home-brand { display: flex; min-width: 0; align-items: center; }
+.home-brand-logo { width: clamp(145px, 48vw, 188px); height: auto; object-fit: contain; filter: drop-shadow(0 3px 7px #43140755); }
 .home-brand-mark { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid #fed7aa44; border-radius: 14px; background: #fff7ed12; color: #fdba74; }
 .home-brand-mark svg { width: 25px; }
 .home-brand strong { display: block; font-size: .91rem; }

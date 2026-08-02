@@ -2,21 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { apiFetch } from "@/lib/api";
 import { clearUserSession, getUser, getUserToken } from "@/lib/auth";
 import { addLine, getCart, setCart, updateQuantity } from "@/lib/cart";
 import GameVariantSheet from "@/components/GameVariantSheet";
 
 const CARD_ACCENTS = ["#f97316", "#2563eb", "#059669", "#9333ea"];
-
-function TicketLogo() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 32 32">
-      <path d="M7 6h18a2 2 0 0 1 2 2v4a4 4 0 0 0 0 8v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4a4 4 0 0 0 0-8V8a2 2 0 0 1 2-2Z" fill="currentColor" />
-      <path d="M16 9v14" stroke="#7c2d12" strokeWidth="1.7" strokeDasharray="2 3" />
-    </svg>
-  );
-}
 
 function SparkIcon() {
   return (
@@ -105,8 +97,14 @@ export default function HomePage() {
 
         <header className="home-header">
           <div className="home-brand">
-            <span className="home-brand-mark"><TicketLogo /></span>
-            <span><strong>Jalalpur Fun</strong><small>ADVENTURE PARK</small></span>
+            <Image
+              className="home-brand-logo"
+              src="/jalalpur-logo.png"
+              alt="Jalalpur Fuun"
+              width={700}
+              height={354}
+              priority
+            />
           </div>
           <button
             className="home-avatar"
