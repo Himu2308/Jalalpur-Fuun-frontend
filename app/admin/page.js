@@ -25,6 +25,7 @@ export default function AdminPage() {
   const [gameForm, setGameForm] = useState({ name: "", pricePerPerson: "", imageUrl: "" });
   const [gameError, setGameError] = useState("");
   const [savingGame, setSavingGame] = useState(false);
+  const [deletingGameId, setDeletingGameId] = useState(null);
 
   const [expandedGameId, setExpandedGameId] = useState(null);
   const [variantForm, setVariantForm] = useState({ mode: "single", laps: "", pricePerPerson: "" });
@@ -155,6 +156,28 @@ export default function AdminPage() {
       setGameError(err.message || "Could not add activity");
     } finally {
       setSavingGame(false);
+    }
+  }
+
+  async function deleteGame(game) {
+    const confirmed = window.confirm(
+      `Remove "${game.name}"?\n\nIt will disappear from the customer homepage. Existing bookings and tickets will remain available.`
+    );
+    if (!confirmed) return;
+
+    setGameError("");
+    setDeletingGameId(game.id);
+    try {
+      await apiFetch(`/games/${game.id}`, {
+        method: "DELETE",
+        token: getAdminToken(),
+      });
+      if (expandedGameId === game.id) setExpandedGameId(null);
+      await loadGames();
+    } catch (err) {
+      setGameError(err.message || "Could not remove activity");
+    } finally {
+      setDeletingGameId(null);
     }
   }
 
@@ -333,13 +356,26 @@ export default function AdminPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ width: "auto", minHeight: 32, padding: "4px 12px", fontSize: "0.8rem" }}
-                    onClick={() => toggleExpand(g.id)}
-                  >
-                    {expandedGameId === g.id ? "Close" : "Manage pricing"}
-                  </button>
+                  <div className="flex shrink-0 flex-col gap-1.5">
+                    <button
+                      className="btn btn-secondary"
+                      style={{ width: "auto", minHeight: 32, padding: "4px 10px", fontSize: "0.72rem" }}
+                      onClick={() => toggleExpand(g.id)}
+                      disabled={deletingGameId === g.id}
+                    >
+                      {expandedGameId === g.id ? "Close" : "Manage pricing"}
+                    </button>
+                    <button
+                      className="flex min-h-8 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[0.7rem] font-bold text-red-700 active:bg-red-100 disabled:opacity-50"
+                      onClick={() => deleteGame(g)}
+                      disabled={deletingGameId === g.id}
+                    >
+                      <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {deletingGameId === g.id ? "Removing…" : "Delete activity"}
+                    </button>
+                  </div>
                 </div>
 
                 {expandedGameId === g.id && (
