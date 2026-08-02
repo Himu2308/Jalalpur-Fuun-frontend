@@ -1,0 +1,20 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "in.jalalpurfun.app"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "in.jalalpurfun.app"
+        minSdk 23
+        targetSdk 35
+        versionCode 3
+        versionName "1.1.0"
+    }
+}
+
+dependencies {
+    implementation "com.google.android.gms:play-services-auth:21.2.0"
+}
