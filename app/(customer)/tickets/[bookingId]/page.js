@@ -8,82 +8,61 @@ import QrSwiper from "@/components/QrSwiper";
 
 export default function TicketsPage() {
   const router = useRouter();
-  const params = useParams();
-  const bookingId = params.bookingId;
-  const [items, setItems] = useState(null);
+  const { bookingId } = useParams();
+  const [booking, setBooking] = useState(null);
   const [error, setError] = useState("");
 
-  const load = useCallback(
-    (token) => {
-      apiFetch("/bookings/mine", { token })
-        .then((data) => {
-          const booking = data.bookings.find((b) => String(b.id) === String(bookingId));
-          if (!booking) {
-            setError("Booking not found");
-            return;
-          }
-          setItems(booking.items);
-        })
-        .catch((err) => setError(err.message || "Could not load tickets"));
-    },
-    [bookingId]
-  );
+  const load = useCallback((token) => {
+    apiFetch("/bookings/mine", { token }).then((data) => {
+      const match = data.bookings.find((item) => String(item.id) === String(bookingId));
+      if (!match) { setError("This booking could not be found."); return; }
+      setBooking(match);
+    }).catch((requestError) => setError(requestError.message || "Could not load tickets"));
+  }, [bookingId]);
 
   useEffect(() => {
     const token = getUserToken();
-    if (!token) {
-      router.replace("/login");
-      return undefined;
-    }
-
+    if (!token) { router.replace("/login"); return undefined; }
     load(token);
-
-    // Ticket status changes on the backend the moment a worker scans it —
-    // refresh whenever the customer comes back to this tab so it never shows a stale "unused".
-    function onVisible() {
-      if (document.visibilityState === "visible") load(token);
-    }
+    function onVisible() { if (document.visibilityState === "visible") load(token); }
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [router, load]);
 
-  if (error) {
-    return (
-      <div className="page">
-        <p className="error-text">{error}</p>
-      </div>
-    );
-  }
-
-  if (!items) {
-    return (
-      <div className="page">
-        <p className="muted">Loading tickets...</p>
-      </div>
-    );
-  }
+  if (error) return <main className="tickets-page"><div className="tickets-state"><span>!</span><h1>Ticket unavailable</h1><p>{error}</p><button onClick={() => router.push("/my-bookings")}>Back to my bookings</button></div></main>;
+  if (!booking) return <main className="tickets-page"><div className="tickets-loading"><i /><span>Preparing your tickets…</span></div></main>;
 
   const STATUS_RANK = { unused: 0, expired: 1, used: 2 };
-  const flatTickets = items
-    .flatMap((item) =>
-      item.tickets.map((ticket, i) => ({
-        qrToken: ticket.qrToken || ticket.qr_token,
-        status: ticket.status || "unused",
-        gameName: item.gameName,
-        variantLabel: item.variantLabel,
-        imageUrl: item.imageUrl,
-        positionLabel: `Person ${i + 1} of ${item.tickets.length}`,
-      }))
-    )
-    .sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]);
+  const flatTickets = booking.items.flatMap((item) => item.tickets.map((ticket, index) => ({
+    qrToken: ticket.qrToken || ticket.qr_token,
+    status: ticket.status || "unused",
+    gameName: item.gameName,
+    variantLabel: item.variantLabel,
+    imageUrl: item.imageUrl,
+    positionLabel: `Guest ${index + 1} of ${item.tickets.length}`,
+  }))).sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]);
+  const readyCount = flatTickets.filter((ticket) => ticket.status === "unused").length;
+  const visitDate = new Date(booking.visit_date);
 
   return (
-    <div className="page">
-      <div className="top-bar">
-        <h1>Your Tickets</h1>
-      </div>
-      <p className="muted">Swipe to see each person&apos;s QR code. Valid for entry today only.</p>
-      <QrSwiper tickets={flatTickets} />
-    </div>
+    <main className="tickets-page">
+      <header className="tickets-header">
+        <button onClick={() => router.push("/my-bookings")} aria-label="Back to bookings">←</button>
+        <div><span>DIGITAL ENTRY PASS</span><h1>Your tickets</h1></div>
+        <i>{flatTickets.length}</i>
+      </header>
+      <section className="tickets-content">
+        <div className="tickets-meta">
+          <span><small>VISIT DATE</small><strong>{visitDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</strong></span>
+          <i />
+          <span><small>BOOKING ID</small><strong>JF-{String(booking.id).padStart(5, "0")}</strong></span>
+          <i />
+          <span><small>READY</small><strong>{readyCount}/{flatTickets.length}</strong></span>
+        </div>
+        <div className="tickets-instruction"><i>↔</i><span><strong>Swipe between tickets</strong><small>Show one QR code per guest at the activity gate</small></span></div>
+        <QrSwiper tickets={flatTickets} visitDate={visitDate} bookingId={booking.id} />
+        <div className="tickets-help"><span>ⓘ</span><p><strong>Keep your screen bright</strong><br />Each QR code can be scanned once and will update automatically after entry.</p></div>
+      </section>
+    </main>
   );
 }

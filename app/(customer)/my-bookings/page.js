@@ -8,6 +8,10 @@ import { getUserToken } from "@/lib/auth";
 
 const STATUS_LABEL = { paid: "Confirmed", pending: "Pending", failed: "Failed" };
 
+function TicketIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5V9a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15.5V13a2 2 0 0 0 0-4V6.5Z" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M10 6v10" stroke="currentColor" strokeWidth="1.8" strokeDasharray="2 2"/></svg>;
+}
+
 export default function MyBookingsPage() {
   const router = useRouter();
   const [bookings, setBookings] = useState(null);
@@ -15,92 +19,66 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     const token = getUserToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+    if (!token) { router.replace("/login"); return; }
     apiFetch("/bookings/mine", { token })
       .then((data) => setBookings(data.bookings))
-      .catch((err) => setError(err.message || "Could not load bookings"));
+      .catch((requestError) => setError(requestError.message || "Could not load bookings"));
   }, [router]);
 
   return (
-    <div className="page">
-      <div className="top-bar">
-        <h1>My Bookings</h1>
-      </div>
+    <main className="bookings-page">
+      <header className="bookings-header">
+        <div><span>YOUR ADVENTURES</span><h1>My bookings</h1><p>All your fun, saved in one place.</p></div>
+        <i><TicketIcon /></i>
+      </header>
 
-      {error && <p className="error-text">{error}</p>}
-      {!bookings && !error && <p className="muted">Loading...</p>}
-      {bookings && bookings.length === 0 && (
-        <div className="card flex flex-col items-center gap-2 py-10 text-center">
-          <p className="text-3xl">🎟️</p>
-          <p className="font-semibold">No bookings yet</p>
-          <p className="muted">Head to Home and book your first activity.</p>
-        </div>
-      )}
+      <section className="bookings-content">
+        {error && <div className="bookings-error" role="alert"><strong>Couldn&apos;t load bookings</strong><span>{error}</span></div>}
 
-      <div className="flex flex-col gap-4">
-        {bookings?.map((booking) => {
-          const coverImage = booking.items.find((i) => i.imageUrl)?.imageUrl;
-          const ticketCount = booking.items.reduce((sum, i) => sum + i.tickets.length, 0);
-          const CardTag = booking.status === "paid" ? Link : "div";
-          const cardProps = booking.status === "paid" ? { href: `/tickets/${booking.id}` } : {};
+        {!bookings && !error && <div className="bookings-list">{[0, 1].map((item) => <div className="booking-card booking-skeleton" key={item}><div /><span /><i /></div>)}</div>}
 
-          return (
-            <CardTag
-              key={booking.id}
-              {...cardProps}
-              className={`block overflow-hidden rounded-2xl border border-line bg-surface ${
-                booking.status !== "paid" ? "opacity-70" : ""
-              }`}
-            >
-              <div
-                className="relative h-24 bg-navy bg-cover bg-center"
-                style={coverImage ? { backgroundImage: `url(${coverImage})` } : undefined}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                <div className="absolute inset-x-4 bottom-2.5 flex items-end justify-between text-white">
-                  <p className="text-sm font-bold [text-shadow:0_1px_3px_rgba(0,0,0,.5)]">
-                    {new Date(booking.visit_date).toLocaleDateString(undefined, {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      booking.status === "paid"
-                        ? "bg-success text-white"
-                        : booking.status === "pending"
-                          ? "bg-gold text-navy"
-                          : "bg-danger text-white"
-                    }`}
-                  >
-                    {STATUS_LABEL[booking.status] || booking.status}
-                  </span>
-                </div>
-              </div>
+        {bookings?.length === 0 && (
+          <div className="bookings-empty">
+            <i><TicketIcon /></i><span>NO TICKETS YET</span><h2>Your next adventure<br />is waiting</h2><p>Explore activities and book your first unforgettable experience.</p><Link href="/">Explore activities <b>→</b></Link>
+          </div>
+        )}
 
-              <div className="flex flex-col gap-1.5 p-3.5">
-                {booking.items.map((item) => (
-                  <div key={item.bookingItemId} className="flex items-center justify-between text-sm">
-                    <span className="truncate">
-                      {item.gameName}
-                      {item.variantLabel ? ` · ${item.variantLabel}` : ""}
-                    </span>
-                    <span className="muted shrink-0">× {item.tickets.length}</span>
-                  </div>
-                ))}
-                <div className="mt-1.5 flex items-center justify-between border-t border-line pt-2">
-                  <span className="muted">{ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
-                  <span className="font-bold">₹{Number(booking.total_amount).toFixed(0)}</span>
-                </div>
-              </div>
-            </CardTag>
-          );
-        })}
-      </div>
-    </div>
+        {bookings && bookings.length > 0 && (
+          <>
+            <div className="bookings-title"><div><span>BOOKING HISTORY</span><h2>{bookings.length} booking{bookings.length > 1 ? "s" : ""}</h2></div><small>Newest first</small></div>
+            <div className="bookings-list">
+              {bookings.map((booking) => {
+                const coverImage = booking.items.find((item) => item.imageUrl)?.imageUrl;
+                const ticketCount = booking.items.reduce((sum, item) => sum + item.tickets.length, 0);
+                const availableCount = booking.items.reduce((sum, item) => sum + item.tickets.filter((ticket) => ticket.status === "unused").length, 0);
+                const CardTag = booking.status === "paid" ? Link : "div";
+                const cardProps = booking.status === "paid" ? { href: `/tickets/${booking.id}` } : {};
+                const visitDate = new Date(booking.visit_date);
+
+                return (
+                  <CardTag key={booking.id} {...cardProps} className={`booking-card status-${booking.status}`}>
+                    <div className="booking-cover" style={coverImage ? { backgroundImage: `url(${coverImage})` } : undefined}>
+                      <div className="booking-cover-fallback"><TicketIcon /></div><div className="booking-cover-shade" />
+                      <span className={`booking-status ${booking.status}`}><i />{STATUS_LABEL[booking.status] || booking.status}</span>
+                      <div className="booking-date"><strong>{visitDate.toLocaleDateString(undefined, { day: "2-digit" })}</strong><span>{visitDate.toLocaleDateString(undefined, { month: "short" }).toUpperCase()}<small>{visitDate.getFullYear()}</small></span></div>
+                    </div>
+                    <div className="booking-details">
+                      <div className="booking-reference"><span>BOOKING #{booking.id}</span><small>{ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</small></div>
+                      <div className="booking-activities">
+                        {booking.items.map((item) => <div key={item.bookingItemId}><span><strong>{item.gameName}</strong><small>{item.variantLabel || "Standard entry"}</small></span><b>×{item.tickets.length}</b></div>)}
+                      </div>
+                      <div className="booking-card-footer">
+                        <span><small>TOTAL PAID</small><strong>₹{Number(booking.total_amount).toFixed(0)}</strong></span>
+                        {booking.status === "paid" && <b>{availableCount ? `${availableCount} ready to use` : "View tickets"}<i>→</i></b>}
+                      </div>
+                    </div>
+                  </CardTag>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </section>
+    </main>
   );
 }
