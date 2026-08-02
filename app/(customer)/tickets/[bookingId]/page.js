@@ -6,27 +6,40 @@ import { apiFetch } from "@/lib/api";
 import { getUserToken } from "@/lib/auth";
 import QrSwiper from "@/components/QrSwiper";
 
+const TICKET_REFRESH_MS = 2000;
+
 export default function TicketsPage() {
   const router = useRouter();
   const { bookingId } = useParams();
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState("");
 
-  const load = useCallback((token) => {
-    apiFetch("/bookings/mine", { token }).then((data) => {
+  const load = useCallback((token, { silent = false } = {}) => {
+    return apiFetch("/bookings/mine", { token }).then((data) => {
       const match = data.bookings.find((item) => String(item.id) === String(bookingId));
       if (!match) { setError("This booking could not be found."); return; }
+      setError("");
       setBooking(match);
-    }).catch((requestError) => setError(requestError.message || "Could not load tickets"));
+    }).catch((requestError) => {
+      // A brief network interruption should not replace tickets already on screen.
+      if (!silent) setError(requestError.message || "Could not load tickets");
+    });
   }, [bookingId]);
 
   useEffect(() => {
     const token = getUserToken();
     if (!token) { router.replace("/login"); return undefined; }
     load(token);
-    function onVisible() { if (document.visibilityState === "visible") load(token); }
+    function refreshVisibleTickets() {
+      if (document.visibilityState === "visible") load(token, { silent: true });
+    }
+    function onVisible() { refreshVisibleTickets(); }
+    const refreshTimer = window.setInterval(refreshVisibleTickets, TICKET_REFRESH_MS);
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(refreshTimer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [router, load]);
 
   if (error) return <main className="tickets-page"><div className="tickets-state"><span>!</span><h1>Ticket unavailable</h1><p>{error}</p><button onClick={() => router.push("/my-bookings")}>Back to my bookings</button></div></main>;
