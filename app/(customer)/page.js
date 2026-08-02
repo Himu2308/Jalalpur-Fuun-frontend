@@ -35,6 +35,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sheetGame, setSheetGame] = useState(null);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
     const token = getUserToken();
@@ -107,7 +108,13 @@ export default function HomePage() {
             <span className="home-brand-mark"><TicketLogo /></span>
             <span><strong>Jalalpur Fun</strong><small>ADVENTURE PARK</small></span>
           </div>
-          <button className="home-avatar" onClick={logout} aria-label="Log out" title="Log out">
+          <button
+            className="home-avatar"
+            onClick={() => setAccountOpen((open) => !open)}
+            aria-label="Open account menu"
+            aria-expanded={accountOpen}
+            aria-haspopup="menu"
+          >
             {/* Google profile URLs are remote and not part of the app's configured image hosts. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {user.picture ? <img src={user.picture} alt="" referrerPolicy="no-referrer" /> : <span>{firstName.charAt(0).toUpperCase()}</span>}
@@ -115,7 +122,23 @@ export default function HomePage() {
           </button>
         </header>
 
-        <div className="home-welcome">
+        {accountOpen && (
+          <>
+            <button className="home-account-backdrop" onClick={() => setAccountOpen(false)} aria-label="Close account menu" />
+            <div className="home-account-menu" role="menu">
+              <div className="home-account-user">
+                <span>{firstName.charAt(0).toUpperCase()}</span>
+                <div><strong>{user.name || firstName}</strong><small>{user.email || user.phone}</small></div>
+              </div>
+              <button role="menuitem" onClick={logout}>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M14 8l4 4-4 4M9 12h9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span><strong>Log out</strong><small>Sign out of this account</small></span>
+              </button>
+            </div>
+          </>
+        )}
+
+        <div className={`home-welcome ${accountOpen ? "account-is-open" : ""}`}>
           <span className="home-eyebrow"><SparkIcon /> HELLO, {firstName.toUpperCase()}</span>
           <h1>Ready for your<br /><em>next adventure?</em></h1>
           <p>Pick your thrill, grab your tickets and make today unforgettable.</p>
