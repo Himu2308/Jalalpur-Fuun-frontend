@@ -158,21 +158,13 @@ export default function UserLogPage() {
     setExporting(true);
     try {
       const params = new URLSearchParams({ startDate: exportStartDate, endDate: exportEndDate });
-      const res = await fetch(`${API_URL}/user-logs/export?${params.toString()}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Could not export CSV");
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url;
+      link.href = `${API_URL}/user-logs/export?${params.toString()}`;
       link.download = `user-logs-${exportStartDate}-to-${exportEndDate}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
-      setStatus("CSV exported");
+      setStatus("CSV download started");
       setExportOpen(false);
     } catch (err) {
       setError(err.message || "Could not export CSV");
@@ -281,7 +273,24 @@ export default function UserLogPage() {
       )}
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Recent logs</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 style={{ margin: 0 }}>Recent logs</h3>
+          {recentLogs.length > 0 && (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => {
+                setRecentLogs([]);
+                setVisibleRecentCount(INITIAL_RECENT_LIMIT);
+                setStatus("Recent logs cleared from this phone");
+                setError("");
+              }}
+              style={{ width: "auto", minHeight: 34, padding: "4px 10px", fontSize: "0.78rem", borderRadius: 12 }}
+            >
+              Clear logs
+            </button>
+          )}
+        </div>
         {recentLogs.length === 0 ? (
           <p className="muted">No user logs yet.</p>
         ) : (
