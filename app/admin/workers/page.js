@@ -7,7 +7,8 @@ import { getAdminToken } from "@/lib/auth";
 export default function AdminWorkersPage() {
   const [staffList, setStaffList] = useState(null);
   const [games, setGames] = useState([]);
-  const [form, setForm] = useState({ uid: "", name: "", role: "" });
+  const [form, setForm] = useState({ uid: "", name: "", role: "", canSell: false });
+  const [togglingId, setTogglingId] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [revokingId, setRevokingId] = useState(null);
@@ -39,12 +40,29 @@ export default function AdminWorkersPage() {
     setSaving(true);
     try {
       await apiFetch("/staff", { method: "POST", token: getAdminToken(), body: form });
-      setForm({ uid: "", name: "", role: "" });
+      setForm({ uid: "", name: "", role: "", canSell: false });
       loadStaff();
     } catch (err) {
       setError(err.message || "Could not create worker account");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function toggleCanSell(worker) {
+    setError("");
+    setTogglingId(worker.id);
+    try {
+      const data = await apiFetch(`/staff/${worker.id}`, {
+        method: "PATCH",
+        token: getAdminToken(),
+        body: { canSell: !worker.can_sell },
+      });
+      setStaffList((list) => list.map((s) => (s.id === worker.id ? { ...s, can_sell: data.staff.can_sell } : s)));
+    } catch (err) {
+      setError(err.message || "Could not update worker");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -86,6 +104,15 @@ export default function AdminWorkersPage() {
               ))}
             </select>
           </div>
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[var(--color-primary)]"
+              checked={form.canSell}
+              onChange={(e) => setForm({ ...form, canSell: e.target.checked })}
+            />
+            Can sell tickets at the counter
+          </label>
           {error && <p className="error-text">{error}</p>}
           <button className="btn" type="submit" disabled={saving}>
             {saving ? "Saving..." : "Create worker"}
@@ -105,6 +132,7 @@ export default function AdminWorkersPage() {
                   <th>UID</th>
                   <th>Name</th>
                   <th>Activity</th>
+                  <th>Can sell</th>
                   <th></th>
                 </tr>
               </thead>
@@ -114,6 +142,19 @@ export default function AdminWorkersPage() {
                     <td>{s.uid}</td>
                     <td>{s.name}</td>
                     <td>{games.find((g) => g.key === s.role)?.name || s.role}</td>
+                    <td>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={s.can_sell}
+                        aria-label={`Allow ${s.uid} to sell tickets`}
+                        className={`worker-switch ${s.can_sell ? "on" : ""}`}
+                        onClick={() => toggleCanSell(s)}
+                        disabled={togglingId === s.id}
+                      >
+                        <span />
+                      </button>
+                    </td>
                     <td className="text-right">
                       <button
                         className="btn btn-danger"

@@ -24,8 +24,31 @@ export default function StaffLoginPage() {
   useEffect(() => {
     const token = getWorkerToken();
     const currentWorker = getWorker();
-    if (token && currentWorker) setWorker(currentWorker);
+    if (token && currentWorker) {
+      setWorker(currentWorker);
+      refreshWorker();
+    }
   }, []);
+
+  // Re-reads permissions (e.g. admin turned "can sell" on/off) without needing the worker to log in again.
+  async function refreshWorker() {
+    try {
+      const data = await apiFetch("/auth/worker-me", { token: getWorkerToken() });
+      setWorkerSession(getWorkerToken(), data.worker);
+      setWorker(data.worker);
+      if (!data.worker.canSell) setTab("scan");
+    } catch (err) {
+      if (err.status === 401) {
+        clearWorkerSession();
+        setWorker(null);
+      }
+    }
+  }
+
+  function selectTab(key) {
+    setTab(key);
+    refreshWorker();
+  }
 
   const onScan = useCallback(async (qrToken) => {
     if (busyRef.current) return;
@@ -177,20 +200,22 @@ export default function StaffLoginPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-line bg-surface p-1">
-        {[
-          ["scan", "Scan"],
-          ["sell", "Sell ticket"],
-          ["sales", "My sales"],
-        ].map(([key, label]) => (
-          <button key={key} type="button" className={`counter-segment ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {worker.canSell && (
+        <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-line bg-surface p-1">
+          {[
+            ["scan", "Scan"],
+            ["sell", "Sell ticket"],
+            ["sales", "My sales"],
+          ].map(([key, label]) => (
+            <button key={key} type="button" className={`counter-segment ${tab === key ? "active" : ""}`} onClick={() => selectTab(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {tab === "sell" && <CounterSale token={getWorkerToken()} />}
-      {tab === "sales" && <CounterSalesList token={getWorkerToken()} />}
+      {worker.canSell && tab === "sell" && <CounterSale token={getWorkerToken()} />}
+      {worker.canSell && tab === "sales" && <CounterSalesList token={getWorkerToken()} />}
 
       {tab === "scan" && result && (
         <div className={`status-banner ${result.ok ? "success" : "error"}`}>{result.message}</div>
