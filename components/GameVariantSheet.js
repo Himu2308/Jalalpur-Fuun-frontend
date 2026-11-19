@@ -23,13 +23,13 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
     return [...MODE_ORDER.filter((mode) => present.has(mode)), ...present].filter((mode, index, all) => all.indexOf(mode) === index);
   }, [game.variants]);
   const [mode, setMode] = useState(modes[0]);
-  const lapsForMode = useMemo(
-    () => game.variants.filter((variant) => variant.mode === mode).sort((a, b) => a.laps - b.laps),
+  const timesForMode = useMemo(
+    () => game.variants.filter((variant) => variant.mode === mode).sort((a, b) => a.minutes - b.minutes),
     [game.variants, mode]
   );
-  const [variantId, setVariantId] = useState(lapsForMode[0]?.id);
+  const [variantId, setVariantId] = useState(timesForMode[0]?.id);
   const [quantity, setQuantity] = useState(1);
-  const selectedVariant = game.variants.find((variant) => variant.id === variantId) || lapsForMode[0];
+  const selectedVariant = game.variants.find((variant) => variant.id === variantId) || timesForMode[0];
   const subtotal = (selectedVariant ? Number(selectedVariant.pricePerPerson) : 0) * quantity;
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
 
   function selectMode(nextMode) {
     setMode(nextMode);
-    const first = game.variants.filter((variant) => variant.mode === nextMode).sort((a, b) => a.laps - b.laps)[0];
+    const first = game.variants.filter((variant) => variant.mode === nextMode).sort((a, b) => a.minutes - b.minutes)[0];
     setVariantId(first?.id);
   }
 
@@ -51,7 +51,7 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
       gameName: game.name,
       imageUrl: game.image_url,
       variantId: selectedVariant.id,
-      variantLabel: `${MODE_LABELS[selectedVariant.mode] || selectedVariant.mode} · ${selectedVariant.laps} Laps`,
+      variantLabel: `${MODE_LABELS[selectedVariant.mode] || selectedVariant.mode} · ${selectedVariant.minutes} min`,
       pricePerPerson: Number(selectedVariant.pricePerPerson),
       quantity,
     });
@@ -68,7 +68,7 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
           <div>
             <span>BUILD YOUR RIDE</span>
             <h2 id="variant-title">Choose your kart</h2>
-            <p>Set your ride type, laps and group size.</p>
+            <p>Set your ride type, ride time and group size.</p>
           </div>
           <button onClick={onClose} className="variant-close" aria-label="Close">×</button>
         </header>
@@ -93,13 +93,13 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
           )}
 
           <fieldset className="variant-group">
-            <legend><b>2</b><span>Number of laps</span></legend>
+            <legend><b>2</b><span>Ride time</span></legend>
             <div className="variant-lap-grid">
-              {lapsForMode.map((variant) => {
+              {timesForMode.map((variant) => {
                 const active = selectedVariant?.id === variant.id;
                 return (
                   <button key={variant.id} onClick={() => setVariantId(variant.id)} className={active ? "active" : ""} aria-pressed={active}>
-                    <strong>{variant.laps}</strong><small>LAPS</small><span>₹{Number(variant.pricePerPerson).toFixed(0)}</span>
+                    <strong>{variant.minutes}</strong><small>MINUTES</small><span>₹{Number(variant.pricePerPerson).toFixed(0)}</span>
                   </button>
                 );
               })}

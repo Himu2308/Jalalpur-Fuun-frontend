@@ -16,7 +16,7 @@ export default function AdminActivitiesPage() {
   const [activityForm, setActivityForm] = useState({ name: "", pricePerPerson: "", imageUrl: "" });
   const [activityError, setActivityError] = useState("");
   const [savingActivity, setSavingActivity] = useState(false);
-  const [variantForm, setVariantForm] = useState({ mode: "single", laps: "", pricePerPerson: "" });
+  const [variantForm, setVariantForm] = useState({ mode: "single", minutes: "", pricePerPerson: "" });
   const [variantError, setVariantError] = useState("");
   const [savingVariant, setSavingVariant] = useState(false);
   const [deletingVariantId, setDeletingVariantId] = useState(null);
@@ -87,7 +87,7 @@ export default function AdminActivitiesPage() {
       });
     }
     setActivityError("");
-    setVariantForm({ mode: "single", laps: "", pricePerPerson: "" });
+    setVariantForm({ mode: "single", minutes: "", pricePerPerson: "" });
     setVariantError("");
   }
 
@@ -122,10 +122,10 @@ export default function AdminActivitiesPage() {
   async function submitVariant(e, game) {
     e.preventDefault();
     setVariantError("");
-    const laps = Number(variantForm.laps);
+    const minutes = Number(variantForm.minutes);
     const price = Number(variantForm.pricePerPerson);
-    if (!variantForm.mode || !Number.isInteger(laps) || laps <= 0 || !Number.isFinite(price) || price <= 0) {
-      setVariantError("Mode, a positive lap count, and a positive price per person are required");
+    if (!variantForm.mode || !Number.isInteger(minutes) || minutes <= 0 || !Number.isFinite(price) || price <= 0) {
+      setVariantError("Mode, ride time in whole minutes, and a positive price per person are required");
       return;
     }
     setSavingVariant(true);
@@ -133,9 +133,9 @@ export default function AdminActivitiesPage() {
       await apiFetch(`/games/${game.id}/variants`, {
         method: "POST",
         token: getAdminToken(),
-        body: { mode: variantForm.mode, laps, pricePerPerson: price },
+        body: { mode: variantForm.mode, minutes, pricePerPerson: price },
       });
-      setVariantForm({ mode: "single", laps: "", pricePerPerson: "" });
+      setVariantForm({ mode: "single", minutes: "", pricePerPerson: "" });
       loadGames();
     } catch (err) {
       setVariantError(err.message || "Could not add variant");
@@ -300,7 +300,7 @@ export default function AdminActivitiesPage() {
                         <thead>
                           <tr>
                             <th>Mode</th>
-                            <th>Laps</th>
+                            <th>Minutes</th>
                             <th>₹ / person</th>
                             <th></th>
                           </tr>
@@ -309,7 +309,7 @@ export default function AdminActivitiesPage() {
                           {g.variants.map((v) => (
                             <tr key={v.id}>
                               <td className="capitalize">{v.mode}</td>
-                              <td>{v.laps}</td>
+                              <td>{v.minutes} min</td>
                               <td>₹{Number(v.pricePerPerson).toFixed(0)}</td>
                               <td>
                                 <button
@@ -341,14 +341,14 @@ export default function AdminActivitiesPage() {
                         </select>
                       </div>
                       <div className="field">
-                        <label className="label">Laps</label>
+                        <label className="label">Minutes</label>
                         <input
                           className="input"
                           type="number"
                           min="1"
                           style={{ minHeight: 40, padding: "6px 8px" }}
-                          value={variantForm.laps}
-                          onChange={(e) => setVariantForm({ ...variantForm, laps: e.target.value })}
+                          value={variantForm.minutes}
+                          onChange={(e) => setVariantForm({ ...variantForm, minutes: e.target.value })}
                         />
                       </div>
                       <div className="field">

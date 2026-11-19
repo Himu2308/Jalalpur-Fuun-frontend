@@ -12,5 +12,5 @@ export const PAYMENT_LABELS = { cash: "Cash", upi: "UPI", split: "Cash + UPI" };
 
 export function variantText(variant) {
   const mode = variant.mode.charAt(0).toUpperCase() + variant.mode.slice(1);
-  return `${mode} · ${variant.laps} laps`;
+  return `${mode} · ${variant.minutes} min`;
 }
