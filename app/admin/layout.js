@@ -23,6 +23,16 @@ const NAV_ITEMS = [
     icon: "M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6",
   },
   {
+    href: "/admin/bookings",
+    label: "Bookings",
+    icon: "M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7ZM8 10h8M8 14h5",
+  },
+  {
+    href: "/admin/refunds",
+    label: "Refunds",
+    icon: "M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11",
+  },
+  {
     href: "/admin/activities",
     label: "Activities",
     icon: "M4 20 10 9l4 6 2-3 4 8H4ZM15 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",

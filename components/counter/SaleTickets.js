@@ -57,7 +57,7 @@ export default function SaleTickets({ sale, onDone, doneLabel = "New sale", just
               <QRCodeSVG value={ticket.qrToken} size={150} level="M" />
             </div>
             {ticket.status !== "unused" && (
-              <p className="m-0 text-xs font-bold text-danger no-print">{ticket.status === "used" ? "ALREADY USED" : "EXPIRED"}</p>
+              <p className="m-0 text-xs font-bold text-danger no-print">{{ used: "ALREADY USED", cancelled: "CANCELLED / REFUNDED" }[ticket.status] || "EXPIRED"}</p>
             )}
             <p className="m-0 font-mono text-sm font-bold tracking-[0.12em]">#{ticket.qrToken.slice(-8).toUpperCase()}</p>
             <p className="m-0 text-[0.7rem]">Valid on {visitDate} only · Ticket {index + 1}/{tickets.length}</p>

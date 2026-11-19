@@ -7,6 +7,7 @@ const STATUS_COPY = {
   unused: { label: "READY TO USE", icon: "✓" },
   used: { label: "ALREADY USED", icon: "✓" },
   expired: { label: "EXPIRED", icon: "×" },
+  cancelled: { label: "CANCELLED · REFUNDED", icon: "×" },
 };
 const SWIPE_THRESHOLD_PX = 50;
 
@@ -49,7 +50,7 @@ export default function QrSwiper({ tickets, visitDate, bookingId }) {
                     <div className={`ticket-state ${ticket.status}`}><i>{state.icon}</i><span>{state.label}</span></div>
                     <div className={`ticket-qr ${disabled ? "disabled" : ""}`}>
                       <QRCodeSVG value={ticket.qrToken} size={184} bgColor={disabled ? "#f4ece8" : "#ffffff"} fgColor={disabled ? "#a68e84" : "#2b0d06"} level="M" />
-                      {disabled && <span>{ticket.status === "used" ? "USED" : "EXPIRED"}</span>}
+                      {disabled && <span>{{ used: "USED", cancelled: "CANCELLED" }[ticket.status] || "EXPIRED"}</span>}
                     </div>
                     <p className="ticket-code">#{ticket.qrToken.slice(-8).toUpperCase()}</p>
                     <div className="ticket-facts">

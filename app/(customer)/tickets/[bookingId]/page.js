@@ -45,7 +45,7 @@ export default function TicketsPage() {
   if (error) return <main className="tickets-page"><div className="tickets-state"><span>!</span><h1>Ticket unavailable</h1><p>{error}</p><button onClick={() => router.push("/my-bookings")}>Back to my bookings</button></div></main>;
   if (!booking) return <main className="tickets-page"><div className="tickets-loading"><i /><span>Preparing your tickets…</span></div></main>;
 
-  const STATUS_RANK = { unused: 0, expired: 1, used: 2 };
+  const STATUS_RANK = { unused: 0, expired: 1, used: 2, cancelled: 3 };
   const flatTickets = booking.items.flatMap((item) => item.tickets.map((ticket, index) => ({
     qrToken: ticket.qrToken || ticket.qr_token,
     status: ticket.status || "unused",

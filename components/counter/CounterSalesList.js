@@ -91,12 +91,16 @@ export default function CounterSalesList({ token, isAdmin = false }) {
 
       {totals && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            ["Total collected", rupees(totals.total), `${totals.sales} sale${totals.sales === 1 ? "" : "s"} · ${totals.tickets} tickets`],
-            ["Cash", rupees(totals.cash), "Should be in the drawer"],
-            ["UPI", rupees(totals.upi), "Check against UPI app"],
-            ["Tickets", String(totals.tickets), "Issued at counter"],
-          ].map(([label, value, hint]) => (
+          {(() => {
+            const cashOut = totals.refundedCash + totals.onlineRefundedCash;
+            const upiOut = totals.refundedUpi + totals.onlineRefundedUpi;
+            return [
+              ["Net collected", rupees(totals.total - cashOut - upiOut), `${totals.sales} sale${totals.sales === 1 ? "" : "s"}${cashOut + upiOut > 0 ? ` · ${rupees(cashOut + upiOut)} refunded` : ""}`],
+              ["Cash in drawer", rupees(totals.cash - cashOut), cashOut > 0 ? `${rupees(totals.cash)} taken − ${rupees(cashOut)} refunded` : "Should be in the drawer"],
+              ["UPI (net)", rupees(totals.upi - upiOut), upiOut > 0 ? `${rupees(totals.upi)} received − ${rupees(upiOut)} refunded` : "Check against UPI app"],
+              ["Tickets", String(totals.tickets), totals.cancelledTickets > 0 ? `Valid · ${totals.cancelledTickets} cancelled` : "Issued at counter"],
+            ];
+          })().map(([label, value, hint]) => (
             <div key={label} className="card" style={{ padding: 14 }}>
               <p className="muted m-0 text-xs font-semibold">{label}</p>
               <p className="m-0 mt-1 text-xl font-bold">{value}</p>
@@ -145,6 +149,12 @@ export default function CounterSalesList({ token, isAdmin = false }) {
                           : PAYMENT_LABELS[s.payment_method]}
                       </div>
                       {s.upi_ref && <div className="muted font-mono text-xs">{s.upi_ref}</div>}
+                      {Number(s.refunded_cash) + Number(s.refunded_upi) > 0 && (
+                        <div className="text-xs font-bold text-danger">
+                          Refunded {rupees(Number(s.refunded_cash) + Number(s.refunded_upi))}
+                          {s.cancelled_count > 0 && ` · ${s.cancelled_count} cancelled`}
+                        </div>
+                      )}
                     </td>
                     {isAdmin && <td className="whitespace-nowrap">{s.sold_by_uid || "Admin"}</td>}
                     <td>

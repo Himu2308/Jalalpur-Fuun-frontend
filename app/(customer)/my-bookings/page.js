@@ -68,7 +68,7 @@ export default function MyBookingsPage() {
                         {booking.items.map((item) => <div key={item.bookingItemId}><span><strong>{item.gameName}</strong><small>{item.variantLabel || "Standard entry"}</small></span><b>×{item.tickets.length}</b></div>)}
                       </div>
                       <div className="booking-card-footer">
-                        <span><small>TOTAL PAID</small><strong>₹{Number(booking.total_amount).toFixed(0)}</strong></span>
+                        <span><small>TOTAL PAID</small><strong>₹{Number(booking.total_amount).toFixed(0)}</strong>{Number(booking.refunded_amount) > 0 && <small className="booking-refunded">₹{Number(booking.refunded_amount).toLocaleString("en-IN")} refunded</small>}</span>
                         {booking.status === "paid" && <b>{availableCount ? `${availableCount} ready to use` : "View tickets"}<i>→</i></b>}
                       </div>
                     </div>
