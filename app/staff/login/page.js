@@ -113,6 +113,7 @@ export default function StaffLoginPage() {
     clearWorkerSession();
     setWorker(null);
     setUid("");
+    setTab("scan");
   }
 
   if (!worker) {
@@ -186,6 +187,9 @@ export default function StaffLoginPage() {
     );
   }
 
+  // Workers without selling permission always get the scanner, whatever tab was last open.
+  const activeTab = worker.canSell ? tab : "scan";
+
   return (
     <div className="page">
       <div className="top-bar">
@@ -214,14 +218,14 @@ export default function StaffLoginPage() {
         </div>
       )}
 
-      {worker.canSell && tab === "sell" && <CounterSale token={getWorkerToken()} />}
-      {worker.canSell && tab === "sales" && <CounterSalesList token={getWorkerToken()} />}
+      {activeTab === "sell" && <CounterSale token={getWorkerToken()} />}
+      {activeTab === "sales" && <CounterSalesList token={getWorkerToken()} />}
 
-      {tab === "scan" && result && (
+      {activeTab === "scan" && result && (
         <div className={`status-banner ${result.ok ? "success" : "error"}`}>{result.message}</div>
       )}
 
-      {tab === "scan" && (
+      {activeTab === "scan" && (
       <div className="overflow-hidden rounded-3xl border border-line bg-surface">
         <div className="border-b border-line bg-paper px-4 py-2.5 text-center">
           <p className="muted">Scan a ticket&apos;s QR code</p>
