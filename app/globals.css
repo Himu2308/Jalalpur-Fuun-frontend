@@ -606,3 +606,40 @@ a.booking-card:active { transform: scale(.985); box-shadow: 0 4px 14px #52200d0c
 .worker-switch.on { background: var(--color-success); }
 .worker-switch.on span { transform: translateX(18px); }
 .worker-switch:disabled { opacity: .5; cursor: wait; }
+
+/* ---------- Attendance ---------- */
+.att-present { --att: #1f9d55; --att-bg: #dcfce7; }
+.att-absent { --att: #d0342c; --att-bg: #fee2e2; }
+.att-half_day { --att: #b7791f; --att-bg: #fef3c7; }
+.att-leave { --att: #2563eb; --att-bg: #dbeafe; }
+.att-week_off { --att: #64748b; --att-bg: #e2e8f0; }
+.att-nav { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-surface); font-size: 1.3rem; cursor: pointer; }
+.att-nav:disabled { opacity: .35; cursor: not-allowed; }
+.att-chip { padding: 4px 10px; border-radius: 999px; background: var(--att-bg, var(--color-paper)); color: var(--att, var(--color-ink-muted)); font-size: .78rem; font-weight: 700; }
+.att-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 8px; border-bottom: 1px solid var(--color-line); border-left: 3px solid transparent; }
+.att-row.changed { border-left-color: var(--color-gold); background: #fffbeb; }
+.att-worker { display: flex; flex-direction: column; justify-content: center; }
+.att-status-group { display: flex; gap: 6px; }
+.att-status { flex: 1; min-width: 40px; min-height: 40px; border: 1.5px solid var(--color-line); border-radius: 10px; background: var(--color-surface); color: var(--color-ink-muted); font-size: .82rem; font-weight: 800; cursor: pointer; }
+.att-status.active { border-color: var(--att); background: var(--att); color: #fff; }
+.att-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.att-time { display: flex; align-items: center; gap: 6px; color: var(--color-ink-muted); font-size: .78rem; font-weight: 600; }
+.att-time .input, .att-note { min-height: 40px; padding: 0 10px; font-size: .9rem; }
+.att-time .input:disabled { opacity: .45; }
+.att-note { grid-column: 1 / -1; }
+.att-savebar { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px -16px -16px; padding: 12px 16px; border-top: 1px solid var(--color-line); border-radius: 0 0 16px 16px; background: #fffffff2; }
+.att-grid { font-size: .78rem; }
+.att-grid th, .att-grid td { padding: 6px 4px; text-align: center; vertical-align: middle; }
+.att-grid .att-sticky { position: sticky; left: 0; z-index: 1; min-width: 110px; background: var(--color-surface); text-align: left; }
+.att-grid .att-sunday { background: #faf7f2; }
+.att-day-btn { display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0; border: 0; background: none; font-weight: 700; cursor: pointer; }
+.att-day-btn small { color: var(--color-ink-muted); font-size: .6rem; font-weight: 600; }
+.att-day-btn:disabled { color: var(--color-ink-muted); cursor: default; opacity: .5; }
+.att-cell { display: inline-grid; min-width: 24px; height: 22px; padding: 0 3px; place-items: center; border-radius: 6px; background: var(--att-bg); color: var(--att); font-size: .68rem; font-weight: 800; }
+.att-cell-empty { color: #c9ccc8; }
+
+@media (min-width: 900px) {
+  .att-row { grid-template-columns: 180px 280px minmax(0, 1fr); align-items: center; }
+  .att-extra { grid-template-columns: 130px 130px minmax(0, 1fr); }
+  .att-note { grid-column: auto; }
+}
