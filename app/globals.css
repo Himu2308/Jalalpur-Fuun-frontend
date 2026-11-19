@@ -578,3 +578,24 @@ a.booking-card:active { transform: scale(.985); box-shadow: 0 4px 14px #52200d0c
   .admin-content { padding: 24px 28px 40px; }
   .admin-split { grid-template-columns: 360px minmax(0, 1fr); align-items: start; }
 }
+
+/* ---------- Counter (walk-in) sales ---------- */
+.counter-option {
+  display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 0 14px; border: 1px solid var(--color-line); border-radius: 14px; background: var(--color-surface);
+  color: var(--color-ink); font-size: .95rem; text-align: left; cursor: pointer;
+}
+.counter-option-sm { min-height: 44px; font-size: .85rem; }
+.counter-option b { display: inline-grid; width: 24px; height: 24px; margin-left: 6px; place-items: center; border-radius: 50%; background: var(--color-primary); color: #fff; }
+.counter-option:active { background: var(--color-paper); }
+.counter-segment { min-height: 40px; border: 0; border-radius: 12px; background: transparent; color: var(--color-ink-muted); font-size: .85rem; font-weight: 700; cursor: pointer; }
+.counter-segment.active { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 1px 3px #0002; }
+
+/* Printing counter tickets: only the ticket grid is printed, one ticket per row for receipt printers. */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; top: 0; left: 0; display: block !important; width: 100%; }
+  .print-ticket { margin: 0 auto 12px; max-width: 300px; border: 1px dashed #999 !important; break-inside: avoid; page-break-inside: avoid; }
+  .no-print { display: none !important; }
+}

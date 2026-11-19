@@ -13,6 +13,16 @@ const NAV_ITEMS = [
     icon: "M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16",
   },
   {
+    href: "/admin/sell",
+    label: "Sell ticket",
+    icon: "M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v3ZM14 5v14",
+  },
+  {
+    href: "/admin/sales",
+    label: "Counter sales",
+    icon: "M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6",
+  },
+  {
     href: "/admin/activities",
     label: "Activities",
     icon: "M4 20 10 9l4 6 2-3 4 8H4ZM15 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",

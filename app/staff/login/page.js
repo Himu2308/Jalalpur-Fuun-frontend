@@ -5,6 +5,8 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { clearWorkerSession, getWorker, getWorkerToken, setWorkerSession } from "@/lib/auth";
 import QrScanner from "@/components/QrScanner";
+import CounterSale from "@/components/counter/CounterSale";
+import CounterSalesList from "@/components/counter/CounterSalesList";
 
 const RESULT_DISPLAY_MS = 2500;
 
@@ -16,6 +18,7 @@ export default function StaffLoginPage() {
   const [result, setResult] = useState(null);
   const [manualTicketCode, setManualTicketCode] = useState("");
   const [validatingCode, setValidatingCode] = useState(false);
+  const [tab, setTab] = useState("scan"); // scan | sell | sales
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -174,10 +177,26 @@ export default function StaffLoginPage() {
         </button>
       </div>
 
-      {result && (
+      <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-line bg-surface p-1">
+        {[
+          ["scan", "Scan"],
+          ["sell", "Sell ticket"],
+          ["sales", "My sales"],
+        ].map(([key, label]) => (
+          <button key={key} type="button" className={`counter-segment ${tab === key ? "active" : ""}`} onClick={() => setTab(key)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "sell" && <CounterSale token={getWorkerToken()} />}
+      {tab === "sales" && <CounterSalesList token={getWorkerToken()} />}
+
+      {tab === "scan" && result && (
         <div className={`status-banner ${result.ok ? "success" : "error"}`}>{result.message}</div>
       )}
 
+      {tab === "scan" && (
       <div className="overflow-hidden rounded-3xl border border-line bg-surface">
         <div className="border-b border-line bg-paper px-4 py-2.5 text-center">
           <p className="muted">Scan a ticket&apos;s QR code</p>
@@ -216,6 +235,7 @@ export default function StaffLoginPage() {
           </form>
         </div>
       </div>
+      )}
     </div>
   );
 }
