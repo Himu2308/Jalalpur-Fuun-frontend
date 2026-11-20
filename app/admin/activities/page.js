@@ -16,7 +16,8 @@ export default function AdminActivitiesPage() {
   const [activityForm, setActivityForm] = useState({ name: "", pricePerPerson: "", imageUrl: "" });
   const [activityError, setActivityError] = useState("");
   const [savingActivity, setSavingActivity] = useState(false);
-  const [variantForm, setVariantForm] = useState({ mode: "single", minutes: "", pricePerPerson: "" });
+  const [variantForm, setVariantForm] = useState({ mode: "single", minutes: "", packageName: "", pricePerPerson: "", weekendPrice: "" });
+  const [editingVariantId, setEditingVariantId] = useState(null);
   const [variantError, setVariantError] = useState("");
   const [savingVariant, setSavingVariant] = useState(false);
   const [deletingVariantId, setDeletingVariantId] = useState(null);
@@ -87,7 +88,8 @@ export default function AdminActivitiesPage() {
       });
     }
     setActivityError("");
-    setVariantForm({ mode: "single", minutes: "", pricePerPerson: "" });
+    setVariantForm({ mode: "single", minutes: "", packageName: "", pricePerPerson: "", weekendPrice: "" });
+    setEditingVariantId(null);
     setVariantError("");
   }
 
@@ -119,26 +121,56 @@ export default function AdminActivitiesPage() {
     }
   }
 
+  function startEditVariant(v) {
+    setEditingVariantId(v.id);
+    setVariantError("");
+    setVariantForm({
+      mode: v.mode,
+      minutes: String(v.minutes),
+      packageName: v.packageName || "",
+      pricePerPerson: String(v.weekdayPrice),
+      weekendPrice: v.weekendPrice == null ? "" : String(v.weekendPrice),
+    });
+  }
+
+  function cancelEditVariant() {
+    setEditingVariantId(null);
+    setVariantError("");
+    setVariantForm({ mode: "single", minutes: "", packageName: "", pricePerPerson: "", weekendPrice: "" });
+  }
+
+  // Adds a new tier, or saves the one being edited.
   async function submitVariant(e, game) {
     e.preventDefault();
     setVariantError("");
     const minutes = Number(variantForm.minutes);
     const price = Number(variantForm.pricePerPerson);
+    const weekend = variantForm.weekendPrice === "" ? null : Number(variantForm.weekendPrice);
     if (!variantForm.mode || !Number.isInteger(minutes) || minutes <= 0 || !Number.isFinite(price) || price <= 0) {
-      setVariantError("Mode, ride time in whole minutes, and a positive price per person are required");
+      setVariantError("Mode, ride time in whole minutes, and a positive weekday price are required");
+      return;
+    }
+    if (weekend !== null && (!Number.isFinite(weekend) || weekend <= 0)) {
+      setVariantError("Weekend price must be a positive number, or leave it empty to use the weekday price");
       return;
     }
     setSavingVariant(true);
     try {
-      await apiFetch(`/games/${game.id}/variants`, {
-        method: "POST",
+      await apiFetch(editingVariantId ? `/games/${game.id}/variants/${editingVariantId}` : `/games/${game.id}/variants`, {
+        method: editingVariantId ? "PATCH" : "POST",
         token: getAdminToken(),
-        body: { mode: variantForm.mode, minutes, pricePerPerson: price },
+        body: {
+          mode: variantForm.mode,
+          minutes,
+          packageName: variantForm.packageName.trim() || null,
+          pricePerPerson: price,
+          weekendPrice: weekend,
+        },
       });
-      setVariantForm({ mode: "single", minutes: "", pricePerPerson: "" });
+      cancelEditVariant();
       loadGames();
     } catch (err) {
-      setVariantError(err.message || "Could not add variant");
+      setVariantError(err.message || "Could not save pricing tier");
     } finally {
       setSavingVariant(false);
     }
@@ -296,38 +328,63 @@ export default function AdminActivitiesPage() {
                     </form>
 
                     {g.variants.length > 0 && (
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Mode</th>
-                            <th>Minutes</th>
-                            <th>₹ / person</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {g.variants.map((v) => (
-                            <tr key={v.id}>
-                              <td className="capitalize">{v.mode}</td>
-                              <td>{v.minutes} min</td>
-                              <td>₹{Number(v.pricePerPerson).toFixed(0)}</td>
-                              <td>
-                                <button
-                                  className="btn btn-danger"
-                                  style={{ width: "auto", minHeight: 28, padding: "2px 10px", fontSize: "0.75rem" }}
-                                  onClick={() => deleteVariant(g, v.id)}
-                                  disabled={deletingVariantId === v.id}
-                                >
-                                  {deletingVariantId === v.id ? "..." : "Remove"}
-                                </button>
-                              </td>
+                      <div className="overflow-x-auto">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Mode</th>
+                              <th>Time</th>
+                              <th>Weekday</th>
+                              <th>Weekend</th>
+                              <th></th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {g.variants.map((v) => (
+                              <tr key={v.id} style={editingVariantId === v.id ? { background: "#fff6ef" } : undefined}>
+                                <td>
+                                  <span className="capitalize">{v.mode}</span>
+                                  {v.packageName && <div className="muted text-xs">{v.packageName}</div>}
+                                </td>
+                                <td className="whitespace-nowrap">{v.minutes} min</td>
+                                <td className="whitespace-nowrap">
+                                  ₹{Number(v.weekdayPrice).toFixed(0)}
+                                  <div className="muted text-xs">{v.mode === "double" ? "per kart" : "per person"}</div>
+                                </td>
+                                <td className="whitespace-nowrap">
+                                  {v.weekendPrice == null ? <span className="muted">same</span> : `₹${Number(v.weekendPrice).toFixed(0)}`}
+                                </td>
+                                <td>
+                                  <div className="flex justify-end gap-1.5">
+                                    <button
+                                      className="btn btn-secondary"
+                                      style={{ width: "auto", minHeight: 28, padding: "2px 10px", fontSize: "0.75rem" }}
+                                      onClick={() => startEditVariant(v)}
+                                      disabled={savingVariant}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="btn btn-danger"
+                                      style={{ width: "auto", minHeight: 28, padding: "2px 10px", fontSize: "0.75rem" }}
+                                      onClick={() => deleteVariant(g, v.id)}
+                                      disabled={deletingVariantId === v.id}
+                                    >
+                                      {deletingVariantId === v.id ? "..." : "Remove"}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
 
-                    <form onSubmit={(e) => submitVariant(e, g)} className="grid grid-cols-3 items-end gap-2">
+                    <form onSubmit={(e) => submitVariant(e, g)} className="grid grid-cols-2 items-end gap-2 sm:grid-cols-3">
+                      <p className="col-span-2 m-0 text-sm font-bold sm:col-span-3">
+                        {editingVariantId ? "Edit pricing tier" : "Add pricing tier"}
+                      </p>
                       <div className="field">
                         <label className="label">Mode</label>
                         <select
@@ -336,8 +393,8 @@ export default function AdminActivitiesPage() {
                           onChange={(e) => setVariantForm({ ...variantForm, mode: e.target.value })}
                           style={{ minHeight: 40, padding: "6px 8px" }}
                         >
-                          <option value="single">Single</option>
-                          <option value="double">Double</option>
+                          <option value="single">Single (per person)</option>
+                          <option value="double">Double (per kart)</option>
                         </select>
                       </div>
                       <div className="field">
@@ -351,8 +408,19 @@ export default function AdminActivitiesPage() {
                           onChange={(e) => setVariantForm({ ...variantForm, minutes: e.target.value })}
                         />
                       </div>
+                      <div className="field col-span-2 sm:col-span-1">
+                        <label className="label">Package name (optional)</label>
+                        <input
+                          className="input"
+                          placeholder="e.g. Quick Ride"
+                          maxLength={40}
+                          style={{ minHeight: 40, padding: "6px 8px" }}
+                          value={variantForm.packageName}
+                          onChange={(e) => setVariantForm({ ...variantForm, packageName: e.target.value })}
+                        />
+                      </div>
                       <div className="field">
-                        <label className="label">₹ / person</label>
+                        <label className="label">Weekday ₹ (Mon–Fri)</label>
                         <input
                           className="input"
                           type="number"
@@ -363,10 +431,30 @@ export default function AdminActivitiesPage() {
                           onChange={(e) => setVariantForm({ ...variantForm, pricePerPerson: e.target.value })}
                         />
                       </div>
-                      {variantError && <p className="error-text col-span-3">{variantError}</p>}
-                      <button className="btn col-span-3" type="submit" style={{ minHeight: 38 }} disabled={savingVariant}>
-                        {savingVariant ? "Saving..." : "Add pricing tier"}
-                      </button>
+                      <div className="field">
+                        <label className="label">Weekend ₹ (Sat–Sun)</label>
+                        <input
+                          className="input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="same as weekday"
+                          style={{ minHeight: 40, padding: "6px 8px" }}
+                          value={variantForm.weekendPrice}
+                          onChange={(e) => setVariantForm({ ...variantForm, weekendPrice: e.target.value })}
+                        />
+                      </div>
+                      {variantError && <p className="error-text col-span-2 sm:col-span-3">{variantError}</p>}
+                      <div className="col-span-2 flex gap-2 sm:col-span-3">
+                        <button className="btn" type="submit" style={{ minHeight: 38 }} disabled={savingVariant}>
+                          {savingVariant ? "Saving..." : editingVariantId ? "Save changes" : "Add pricing tier"}
+                        </button>
+                        {editingVariantId && (
+                          <button type="button" className="btn btn-secondary" style={{ minHeight: 38 }} onClick={cancelEditVariant}>
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     </form>
                   </div>
                 )}

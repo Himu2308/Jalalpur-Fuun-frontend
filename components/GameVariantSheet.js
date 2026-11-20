@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const MODE_LABELS = { single: "Single kart", double: "Double kart" };
-const MODE_DESCRIPTIONS = { single: "One rider", double: "Two-seat kart" };
+const MODE_DESCRIPTIONS = { single: "One driver · price per person", double: "Driver + passenger · price per kart" };
 const MODE_ORDER = ["single", "double"];
 
 function KartIcon({ double }) {
@@ -30,6 +30,8 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
   const [variantId, setVariantId] = useState(timesForMode[0]?.id);
   const [quantity, setQuantity] = useState(1);
   const selectedVariant = game.variants.find((variant) => variant.id === variantId) || timesForMode[0];
+  // Double-seater tiers are priced per kart: you choose karts, and each kart gets one ticket.
+  const perKart = selectedVariant?.mode === "double";
   const subtotal = (selectedVariant ? Number(selectedVariant.pricePerPerson) : 0) * quantity;
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
       gameName: game.name,
       imageUrl: game.image_url,
       variantId: selectedVariant.id,
-      variantLabel: `${MODE_LABELS[selectedVariant.mode] || selectedVariant.mode} · ${selectedVariant.minutes} min`,
+      variantLabel: `${MODE_LABELS[selectedVariant.mode] || selectedVariant.mode} · ${selectedVariant.minutes} min${selectedVariant.packageName ? ` · ${selectedVariant.packageName}` : ""}`,
       pricePerPerson: Number(selectedVariant.pricePerPerson),
       quantity,
     });
@@ -93,13 +95,13 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
           )}
 
           <fieldset className="variant-group">
-            <legend><b>2</b><span>Ride time</span></legend>
+            <legend><b>2</b><span>Ride time (minutes)</span>{game.isWeekend && <em className="variant-weekend">Weekend prices</em>}</legend>
             <div className="variant-lap-grid">
               {timesForMode.map((variant) => {
                 const active = selectedVariant?.id === variant.id;
                 return (
                   <button key={variant.id} onClick={() => setVariantId(variant.id)} className={active ? "active" : ""} aria-pressed={active}>
-                    <strong>{variant.minutes}</strong><small>MINUTES</small><span>₹{Number(variant.pricePerPerson).toFixed(0)}</span>
+                    <strong>{variant.minutes}</strong><small>{variant.packageName ? variant.packageName.toUpperCase() : "MINUTES"}</small><span>₹{Number(variant.pricePerPerson).toFixed(0)}</span>
                   </button>
                 );
               })}
@@ -107,11 +109,11 @@ export default function GameVariantSheet({ game, onClose, onAdd }) {
           </fieldset>
 
           <fieldset className="variant-group variant-people">
-            <legend><b>3</b><span>Number of people</span></legend>
+            <legend><b>3</b><span>{perKart ? "Number of karts (2 people each)" : "Number of people"}</span></legend>
             <div className="variant-counter">
-              <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity === 1} aria-label="Remove one person">−</button>
-              <span><strong>{quantity}</strong><small>{quantity === 1 ? "PERSON" : "PEOPLE"}</small></span>
-              <button onClick={() => setQuantity((value) => value + 1)} aria-label="Add one person">+</button>
+              <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity === 1} aria-label={perKart ? "Remove one kart" : "Remove one person"}>−</button>
+              <span><strong>{quantity}</strong><small>{perKart ? (quantity === 1 ? "KART" : "KARTS") : quantity === 1 ? "PERSON" : "PEOPLE"}</small></span>
+              <button onClick={() => setQuantity((value) => value + 1)} aria-label={perKart ? "Add one kart" : "Add one person"}>+</button>
             </div>
           </fieldset>
         </div>
